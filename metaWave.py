@@ -16,17 +16,17 @@ class MetaWave:
         expansion = os.path.splitext(file)[1]
 
         if expansion == ".mp3":
-            metadatas = self.get_metadata_mp3_aiff(file, "MP3")
+            metadatas = self.__get_metadata_mp3_aiff(file, "MP3")
         elif expansion == ".aiff":
-            metadatas = self.get_metadata_mp3_aiff(file, "AIFF")
+            metadatas = self.__get_metadata_mp3_aiff(file, "AIFF")
         elif expansion == ".flac":
-            metadatas = self.get_metadata_flac(file)
+            metadatas = self.__get_metadata_flac(file)
         else:
             raise Exception('Такой тип файлов не поддерживается.')
 
         return metadatas
 
-    def get_metadata_mp3_aiff(self, file: str, type_file: str) -> tuple:
+    def __get_metadata_mp3_aiff(self, file: str, type_file: str) -> tuple:
         '''Функция, которая достает метаданные из файлов mp3 и aiff'''
         metadatas = list()
 
@@ -34,6 +34,9 @@ class MetaWave:
             audio = MP3(file)
         elif type_file == "AIFF":
             audio = AIFF(file)
+
+        name = os.path.basename(file)
+        metadatas.append(name)
 
         # Получение картинки обложки
         if 'APIC:' in audio:
@@ -72,20 +75,23 @@ class MetaWave:
 
         # Получение года
         if "TDRC" in audio:
-            year = audio.get("TDRC").text[0]
+            year = str(audio.get("TDRC").text[0])
         else:
             year = None
         metadatas.append(year)
 
-        additional_metadatas = self.get_additional_data(file)
+        additional_metadatas = self.__get_additional_data(file)
         metadatas += additional_metadatas
 
         return tuple(metadatas)
 
-    def get_metadata_flac(self, file: str) -> tuple:
+    def __get_metadata_flac(self, file: str) -> tuple:
         '''Функция, которая достает метаданные из файлов flac'''
         metadatas = list()
         audio = FLAC(file)
+
+        name = os.path.basename(file)
+        metadatas.append(name)
 
         # Получение обложки
         picture = audio.pictures
@@ -132,12 +138,12 @@ class MetaWave:
             year = None
         metadatas.append(year)
 
-        additional_metadatas = self.get_additional_data(file)
+        additional_metadatas = self.__get_additional_data(file)
         metadatas += additional_metadatas
 
         return tuple(metadatas)
     
-    def get_additional_data(self, file: str) -> list:
+    def __get_additional_data(self, file: str) -> list:
         '''Функция которая достает дополнительные данные из аудиофайлов'''
         additional_metadatas = list()
         audio = File(file)
@@ -172,14 +178,15 @@ class MetaWave:
 
         # Получение размера файла
         size = os.stat(file).st_size
-        additional_metadatas.append(self.file_size(size))
-
-        spectrogram = self.get_spectrogram(file)
+        additional_metadatas.append(self.__file_size(size))
+        
+        # Получение спектрограммы
+        spectrogram = self.__get_spectrogram(file)
         additional_metadatas.append(spectrogram)
 
         return additional_metadatas
     
-    def get_spectrogram(self, file) -> bytes:
+    def __get_spectrogram(self, file) -> bytes:
         '''Функция, которая возвращает фотку спектрогррамы в байтах'''
         y, sr = librosa.load(file)
 
@@ -189,16 +196,15 @@ class MetaWave:
 
         plt.savefig(byte_stream, format='jpg')
 
-        # Получите байты из потока
         byte_stream.seek(0)
         image_bytes = byte_stream.read()
 
-        # Закройте поток
         byte_stream.close()
+        plt.close()
 
         return image_bytes
 
-    def file_size(self, size_bytes: int) -> str:
+    def __file_size(self, size_bytes: int) -> str:
         '''Функция для автоматической конвертации байтов в КБ, МБ, ГБ...'''
         units_measurement = ('B','KB','MB','GB','TB','PB')
 
@@ -215,16 +221,17 @@ class MetaWave:
     
     def print_metadata(self, metadatas: tuple) -> None:
         '''Функция дял вывода метаданных из кортежа в консоль'''
-        print(metadatas[0])
-        print("Название трека:", metadatas[1])
-        print("Альбом:", metadatas[2])
-        print("Артист:", metadatas[3])
-        print("Жанр:", metadatas[4])
-        print("Год:", metadatas[5])
-        print("Формат аудио:", metadatas[6])
-        print("Длительность трека:", metadatas[7])
-        print("Количество каналов:", metadatas[8])
-        print("Битрейт:", metadatas[9], "кбит/сек")
-        print("Частота дискретизации (Hz):", metadatas[10])
-        print("Размер файла:", metadatas[11])
-        print(metadatas[12])
+        print("Название файла:", metadatas[0])
+        print(metadatas[1])
+        print("Название трека:", metadatas[2])
+        print("Альбом:", metadatas[3])
+        print("Артист:", metadatas[4])
+        print("Жанр:", metadatas[5])
+        print("Год:", metadatas[6])
+        print("Формат аудио:", metadatas[7])
+        print("Длительность трека:", metadatas[8])
+        print("Количество каналов:", metadatas[9])
+        print("Битрейт:", metadatas[10], "кбит/сек")
+        print("Частота дискретизации (Hz):", metadatas[11])
+        print("Размер файла:", metadatas[12])
+        print(metadatas[13])
